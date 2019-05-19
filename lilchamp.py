@@ -2,141 +2,73 @@ import pygame
 import sys
 from pygame.locals import *
 
+import constants
+import classes
+import tiles
+import levels
+import level_raw_data
+from spritesheet_functions import SpriteSheet
 ############################################################################
 #
 # Name: lilchamp.py
 # Date: April, 2019
-# By: Nicole White
+# By: Nicole constants.WHITE
 # Description: Beginning of a little game. Requires pygame module.
 #
 ############################################################################
 
 
-class Tile():
-    ''' Tile -- a level map is comprised of these '''
-    passable = True                      # can you walk through the tile
-    poison = False                       # is the tile poison
-    name = 'Tile'                        # name of the tile (eg, 'grass')
-    sprite = ''                          # graphic for the tile
-
-    def __str__(self):
-        ''' Informaton to display if the object is called as a string '''
-
-        if self.name:
-            return 'Tile: {}'.format(str(self.name))
-
-        else:
-            print('Tile')
-
-class Level():
-    ''' A list holding an array of tiles, creating a level map '''
-    data = []                          # list array of Tile objects
-    tile_counter_y = 0                 # x offset used when drawing the level
-    tile_counter_x = 0                 # y offset used when drawing the level
-
-
-class Player():
-    ''' The player, a champ. '''
-    right = 'spr/rog1.png'
-    left = 'spr/rog2.png'
-    up = 'spr/rog3.png'
-    down = 'spr/rog1.png'
-    name = 'Player 1'
-    hp = 5
-    x = 30
-    y = 30
-    moving = 'still'
-    current_tile = Tile()
-    above_tile = Tile()
-    below_tile = Tile()
-    left_tile = Tile()
-    right_tile = Tile()
-
-# raw data for the level, store in external file later
-level_input = [
-[1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-[1,0,0,0,0,0,1,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,1,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,1,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,1,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,1,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,1,0,0,0,0,0,0,0,1,0,1],
-[1,0,0,1,0,0,0,0,0,0,0,1,0,1],
-[1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-]
-
-# Create a level instance
-level_one = Level()
-
-# Pixel count for tiles
-tile_px = 32
 
 # Create a player instance
-champ = Player()
+champ = classes.Player()
 champ.name = 'Nico'
 
-# Create some tiles
-grass = Tile()
-grass.name = 'Grass'
-grass.passable = True
-grass.sprite = 'spr/grass.png'
+# Choose a level
+current_level = levels.level_one
 
-stone_wall = Tile()
-stone_wall.name = 'Stone Wall'
-stone_wall.passable = False
-stone_wall.sprite = 'spr/block.png'
-
-# Read the raw data values and store them as Tile objects
-for j, row in enumerate(level_input):
-    level_one.data.append([])
-    for item in row:
-        if item == 0:
-            level_one.data[j].append(grass)
-        elif item == 1:
-            level_one.data[j].append(stone_wall)
+# Define keys for player input
+SPACE_BAR = pygame.K_SPACE
+QUIT_GAME = [pygame.K_ESCAPE, pygame.K_q]
 
 # Start pygame
 pygame.init()
 
-# animation speed
-FPS = 12
-fpsClock = pygame.time.Clock()
 
-# Colours
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
-
-x_max = len(level_one.data[0]) * tile_px   # num of cols in the level * tile_px px
-y_max = len(level_one.data) * tile_px # num of rows in the level * tile_px pix
-
-up = pygame.K_w
-right = pygame.K_d
-down = pygame.K_s
-left = pygame.K_a
-space_bar = pygame.K_SPACE
+constants.FPSClock = pygame.time.Clock()
 
 show_text = False
+npc_dialogue = False
 
 # MAke
-screen_x = 300
-screen_y = 300
-SURF = pygame.display.set_mode((screen_x,screen_y),1,32)
+SURF = pygame.display.set_mode((constants.SCREEN_X,constants.SCREEN_Y),1,32)
 pygame.display.set_caption('Lil Champ')
 
-champImg = pygame.image.load(champ.right)
-grassImg = pygame.image.load(grass.sprite)
-blockImg = pygame.image.load(stone_wall.sprite)
+sprite_sheet = SpriteSheet('spr/Rogue.png')
 
+# player - sprites from sprite sheet in a list
+sprites = [sprite_sheet.get_image(0, 0, 32, 32), # right
+            sprite_sheet.get_image(32, 0, 32, 32),
+            sprite_sheet.get_image(64, 0, 32, 32),
+            sprite_sheet.get_image(96, 0, 32, 32), # left
+            sprite_sheet.get_image(128, 0, 32, 32),
+            sprite_sheet.get_image(160, 0, 32, 32),
+            sprite_sheet.get_image(192, 0, 32, 32), # right blink
+            sprite_sheet.get_image(224, 0, 32, 32), # left blink
+            sprite_sheet.get_image(0, 32, 32, 32), # up
+            sprite_sheet.get_image(32, 32, 32, 32),
+            sprite_sheet.get_image(64, 32, 32, 32),
+            sprite_sheet.get_image(96, 32, 32, 32)]
+
+champ.right = sprites[0]
+champ.left = sprites[3]
+champ.up = sprites[8]
+champ.down = sprites[1]
+champImg = champ.right
 
 while True:
-    fpsClock.tick(FPS)
+    constants.FPSClock.tick(constants.FPS)
 
     pygame.display.update()
-
 
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -144,145 +76,228 @@ while True:
             sys.exit()
 
         if event.type == KEYDOWN:
-            print('tile counter x: {}'.format(level_one.tile_counter_x))
-            print('x coord: {}'.format(int(len(level_one.data[0]) / 2) - level_one.tile_counter_x))
 
+            if event.key == pygame.K_w or event.key == pygame.K_UP:
+                champ.moving = 'north'
+                champ.facing = champ.moving
 
-            if event.key == up:
-                champ.moving = 'up'
+            if event.key == pygame.K_d or event.key == pygame.K_RIGHT:
+                champ.moving = 'east'
+                champ.facing = champ.moving
 
-            if event.key == right:
+            if event.key == pygame.K_s or event.key == pygame.K_DOWN:
+                champ.moving = 'south'
+                champ.facing = champ.moving
 
-                champ.moving = 'right'
+            if event.key == pygame.K_a or event.key == pygame.K_LEFT:
+                champ.moving = 'west'
+                champ.facing = champ.moving
 
-            if event.key == down:
-                champ.moving = 'down'
-
-            if event.key == left:
-                champ.moving = 'left'
-
-            if event.key == space_bar:
+            if event.key == pygame.K_e:
                 if show_text == False:
                     show_text = True
                 elif show_text == True:
                     show_text = False
 
+            if event.key == SPACE_BAR:
+
+                print('tile counter x: {} y: {}'.format(tile_counter_x, tile_counter_y))
+
+                if champ.facing == 'east':
+                    champ.block_facing = [champ.x + 1, champ.y]
+                elif champ.facing == 'west':
+                    champ.block_facing = [champ.x - 1, champ.y]
+                elif champ.facing == 'south':
+                    champ.block_facing = [champ.x, champ.y + 1]
+                elif champ.facing == 'north':
+                    champ.block_facing = [champ.x, champ.y - 1]
+
+                print('current: {} {}'.format(champ.x, champ.y))
+
+                print('facing ' + str(champ.block_facing[0]) + ',' + str(champ.block_facing[1]))
+                print(current_level.data[champ.block_facing[1]][champ.block_facing[0]].name)
+                #
+                # if npc_dialogue == True:
+                #     npc_dialogue = False
+
+                if current_level.data[champ.block_facing[1]][champ.block_facing[0]].type == 'NPC' and npc_dialogue == False:
+                    npc_dialogue = True
+                    dialogue_text = current_level.data[champ.block_facing[1]][champ.block_facing[0]].dialogue
+                else:
+                    npc_dialogue = False
+
+
+            if event.key in QUIT_GAME:
+                pygame.quit()
+                sys.exit()
+
+            if event.key == pygame.K_c:
+                print('x counter: {}'.format(current_level.tile_counter_x))
+                print('len champ.y: {}'.format(str(int(len(current_level.data[champ.x])))))
+                print('divided by 2: {}'.format(str(int(len(current_level.data[champ.y]) / 2))))
+                print('divided by 2 minus x counter: {}'.format(str(int(len(current_level.data[champ.y]) / 2 - current_level.tile_counter_x))))
+                print('x = divided by 2, minus x counter, minus 2: {}'.format(str(int(len(current_level.data[champ.y]) / 2 - current_level.tile_counter_x) - 2)))
+                print('current: {}, {}'.format(champ.x, champ.y))
+
 
     # if champ is anything other than still, do the following:
     if champ.moving != 'still':
 
-        # set champ to 'still' if a keyup event is detected
+        npc_dialogue = False
+
+        # If a keyup event is detected figure out which keys, if any, are
+        # still being pressed and call set the player moving in the right
+        # direction. If no keys are pressed set player to still.
         if event.type == KEYUP:
-            print('end')
-            champ.moving = 'still'
-
-        # if there is no key up, do movement
-        else:
-            if champ.moving == 'right':
-
-                champImg = pygame.image.load(champ.right)
-
-                level_one.tile_counter_x -= 1
-
-                # Get the Tile beneath the player:
-                # y is the length of the level array (ie how many rows),
-                # divided by two to place the character in the center.
-                # the incrementing tile_counter_y balue is subtracted to this
-                # to shift the drawing of the map tiles
-                y_row = int((len(level_one.data) / 2 ) - level_one.tile_counter_y)
-                print('y row: {}'.format(y_row))
-
-                # x value is the length of one row (ie number of columns)
-                # divided by 2, minus tile_counter_x
-                x_col = int(len(level_one.data[y_row]) / 2 - level_one.tile_counter_x) - 2
-                print('x_col: {}'.format(x_col))
-
-                # set current_tile to the Tile object found at the place
-                # in the level array determined above
-                champ.current_tile = level_one.data[y_row][x_col]
-
-                print('current: {}'.format(champ.current_tile))
-                # If the new current tile is not passable, put the player location
-                # back the way it was
-                if champ.current_tile.passable == False:
-                    level_one.tile_counter_x += 1
-                    champ.current_tile = level_one.data[y_row][x_col - 1]
+            pressed = pygame.key.get_pressed()
+            if pressed[pygame.K_w] or pressed[pygame.K_UP]:
+                champ.moving = 'north'
+                champ.facing = champ.moving
+            elif pressed[pygame.K_d] or pressed[pygame.K_RIGHT]:
+                champ.moving = 'east'
+                champ.facing = champ.moving
+            elif pressed[pygame.K_s] or pressed[pygame.K_DOWN]:
+                champ.moving = 'south'
+                champ.facing = champ.moving
+            elif pressed[pygame.K_a] or pressed[pygame.K_LEFT]:
+                champ.moving = 'west'
+                champ.facing = champ.moving
 
 
-            elif champ.moving == 'left':
-                champImg = pygame.image.load(champ.left)
-                level_one.tile_counter_x += 1
-                y_row = int((len(level_one.data) / 2 ) - level_one.tile_counter_y)
-                print('y row: {}'.format(y_row))
-                x_col = int(len(level_one.data[y_row]) / 2 - level_one.tile_counter_x) - 2
-                print('x_col: {}'.format(x_col))
-                champ.current_tile = level_one.data[y_row][x_col]
-                print('current: {}'.format(champ.current_tile))
+            else:
+                champ.moving = 'still'
 
-                if champ.current_tile.passable == False:
-                    level_one.tile_counter_x -= 1
-                    champ.current_tile = level_one.data[y_row][x_col + 1]
+        # Do movement
+        if champ.moving == 'east':
 
-            elif champ.moving == 'up':
-                champImg = pygame.image.load(champ.up)
-
-                level_one.tile_counter_y += 1
-                y_row = int((len(level_one.data) / 2 ) - level_one.tile_counter_y)
-                print('y row: {}'.format(y_row))
-                x_col = int(len(level_one.data[y_row]) / 2 - level_one.tile_counter_x) - 2
-                print('x_col: {}'.format(x_col))
-                champ.current_tile = level_one.data[y_row][x_col]
-                print('current: {}'.format(champ.current_tile))
-
-                if champ.current_tile.passable == False:
-                    level_one.tile_counter_y -= 1
+            champImg = champ.right
 
 
-            elif champ.moving == 'down':
+            current_level.tile_counter_x -= 1
 
-                champImg = pygame.image.load(champ.down)
+            # Get the Tile beneath the player:
+            # y is the length of the level array (ie how many rows),
+            # divided by two to place the character in the center.
+            # the incrementing tile_counter_y value is subtracted to this
+            # to shift the drawing of the map tiles
 
-                level_one.tile_counter_y -= 1
-                y_row = int((len(level_one.data) / 2 ) - level_one.tile_counter_y)
-                print('y row: {}'.format(y_row))
-                x_col = int(len(level_one.data[y_row]) / 2 - level_one.tile_counter_x) - 2
-                print('x_col: {}'.format(x_col))
-                champ.current_tile = level_one.data[y_row][x_col]
-                print('current: {}'.format(champ.current_tile))
+            champ.y = int((len(current_level.data) / 2 ) - current_level.tile_counter_y)
+
+            # x value is the length of one row (ie number of columns)
+            # divided by 2, minus tile_counter_x
+            champ.x = int(len(current_level.data[champ.y]) / 2 - current_level.tile_counter_x) - 2
 
 
-                if champ.current_tile.passable == False:
-                    level_one.tile_counter_y += 1
+
+            # set current_tile to the Tile object found at the place
+            # in the level array determined above
+            champ.current_tile = current_level.data[champ.y][champ.x]
+
+            # If the new current tile is not passable, put the player location
+            # back the way it was
+            if champ.current_tile.passable == False:
+                current_level.tile_counter_x += 1
+                champ.x -= 1
+                champ.current_tile = current_level.data[champ.y][champ.x]
+
+            # If the new current tile is a portal, move to a new level
+            if champ.current_tile.portal == True:
+                current_level = levels.level_two
+
+
+            champ.block_facing = [champ.x + 1, champ.y]
+
+
+        elif champ.moving == 'west':
+            champImg = champ.left
+
+
+            current_level.tile_counter_x += 1
+
+            champ.y = int((len(current_level.data) / 2 ) - current_level.tile_counter_y)
+            champ.x = int(len(current_level.data[champ.y]) / 2 - current_level.tile_counter_x) - 2
+
+            champ.current_tile = current_level.data[champ.y][champ.x]
+
+
+            if champ.current_tile.passable == False:
+                current_level.tile_counter_x -= 1
+                champ.x += 1
+                champ.current_tile = current_level.data[champ.y][champ.x]
+
+            champ.block_facing = [champ.x - 1, champ.y]
+
+        elif champ.moving == 'north':
+            champImg = champ.up
+
+
+            current_level.tile_counter_y += 1
+            champ.y = int((len(current_level.data) / 2 ) - current_level.tile_counter_y)
+            champ.x = int(len(current_level.data[champ.y]) / 2 - current_level.tile_counter_x) - 2
+            champ.current_tile = current_level.data[champ.y][champ.x]
+
+            if champ.current_tile.passable == False:
+                current_level.tile_counter_y -= 1
+                champ.y += 1
+                champ.current_tile = current_level.data[champ.y][champ.x]
+
+            champ.block_facing = [champ.x, champ.y - 1]
+
+        elif champ.moving == 'south':
+            champImg = champ.down
+
+
+            current_level.tile_counter_y -= 1
+            champ.y = int((len(current_level.data) / 2 ) - current_level.tile_counter_y)
+            champ.x = int(len(current_level.data[champ.y]) / 2 - current_level.tile_counter_x) - 2
+            champ.current_tile = current_level.data[champ.y][champ.x]
+
+
+            if champ.current_tile.passable == False:
+                current_level.tile_counter_y += 1
+                champ.y -= 1
+                champ.current_tile = current_level.data[champ.y][champ.x]
+
+            champ.block_facing = [champ.x, champ.y + 1]
+
+        champ.y = int((len(current_level.data) / 2 ) - current_level.tile_counter_y)
+        champ.x = int(len(current_level.data[champ.y]) / 2 - current_level.tile_counter_x) - 2
+
     # Draw the map
-    tile_counter_y = level_one.tile_counter_y
+    SURF.fill(constants.BLACK)
+    tile_counter_y = current_level.tile_counter_y
 
-    for row in level_one.data:
-        tile_counter_x = level_one.tile_counter_x
+    for row in current_level.data:
+        tile_counter_x = current_level.tile_counter_x
+
         for tile in row:
-            if tile == grass:
-                sprite = grassImg
-            elif tile == stone_wall:
-                sprite = blockImg
+            if tile == tiles.grass:
+                sprite = tiles.grass.sprite
+            elif tile == tiles.stone_wall:
+                sprite = tiles.stone_wall.sprite
+            elif tile == tiles.npc1:
+                sprite = tiles.npc1.right
 
-            SURF.blit(sprite, (tile_counter_x * tile_px, tile_counter_y * tile_px))
+            SURF.blit(sprite, (tile_counter_x * constants.TILE_PX, tile_counter_y * constants.TILE_PX))
+
             tile_counter_x += 1
         tile_counter_y += 1
 
     # Draw the character in the middle of the screen and add a few extra pixels
-    # to place it in the middle of the tile
-    SURF.blit(champImg, ((screen_x / 2) + (tile_px / 4), (screen_y / 2) + (tile_px / 4)))
+    # (1/4th the width of a tile on each side) to place it in the middle of the tile
+    SURF.blit(champImg, ((constants.SCREEN_X / 2) + (constants.TILE_PX / 4), (constants.SCREEN_Y / 2) + (constants.TILE_PX / 4)))
+
 
     if show_text:
         fontObj = pygame.font.Font('freesansbold.ttf', 12)
-        textSurfaceObj = fontObj.render('Name: {} HP: {}'.format(champ.name, champ.hp), True, BLACK, WHITE)
+        textSurfaceObj = fontObj.render('Name: {} HP: {}'.format(champ.name, champ.hp), True, constants.BLACK, constants.WHITE)
         textRectObj = textSurfaceObj.get_rect()
         textRectObj.center = (50, 20)
         SURF.blit(textSurfaceObj, textRectObj)
 
-    try:
-        champ.above_tile = level[int(champ.y /tile_px) - 1][int(champ.x / tile_px)]
-        champ.below_tile = level[champ.new_y + 1][champ.new_x]
-        champ.left_tile = level[champ.new_y][champ.new_x - 1]
-        champ.right_tile = level[champ.new_y][champ.new_x + 1]
-    except:
-        pass
+    if npc_dialogue:
+        fontObj = pygame.font.Font('freesansbold.ttf', 12)
+        textSurfaceObj = fontObj.render(dialogue_text, True, constants.BLACK, constants.WHITE)
+        textRectObj = textSurfaceObj.get_rect()
+        textRectObj.center = (150, 275)
+        SURF.blit(textSurfaceObj, textRectObj)
